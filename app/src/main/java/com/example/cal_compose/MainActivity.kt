@@ -7,6 +7,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,7 +27,6 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             Cal_composeTheme {
-                // Scaffold पूरे UI का base layout देता है
                 Scaffold(
                     modifier = Modifier.fillMaxSize()
                 ) { innerPadding ->
@@ -40,29 +41,36 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun CalculatorUI(modifier: Modifier = Modifier) {
-    // स्क्रीन पर दिखने वाला current input/result store करने के लिए state
     var input by remember { mutableStateOf("") }
+    val scrollState = rememberScrollState()
 
-    // Background और layout setup
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF101820)) // Dark background
+            .background(Color(0xFF101820))
             .padding(16.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        // Display section (input और result दिखाने के लिए)
-        Text(
-            text = input,
-            color = Color.White,
-            fontSize = 48.sp,
+        // Display section
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp),
-            textAlign = TextAlign.End
-        )
+                .weight(1f)
+                .verticalScroll(scrollState), // Scroll support
+            contentAlignment = Alignment.BottomEnd
+        ) {
+            Text(
+                text = input,
+                color = Color.White,
+                fontSize = 48.sp,
+                lineHeight = 56.sp, // 👈 Line gap added
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                textAlign = TextAlign.End
+            )
+        }
 
-        // Calculator buttons layout
         val buttons = listOf(
             listOf("C", "⌫", "%", "/"),
             listOf("7", "8", "9", "x"),
@@ -74,7 +82,6 @@ fun CalculatorUI(modifier: Modifier = Modifier) {
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Loop करके हर row बनाना
             buttons.forEach { row ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -88,7 +95,7 @@ fun CalculatorUI(modifier: Modifier = Modifier) {
                             },
                             modifier = Modifier
                                 .weight(1f)
-                                .aspectRatio(1f) // Square buttons
+                                .aspectRatio(1f)
                         )
                     }
                 }
@@ -99,15 +106,13 @@ fun CalculatorUI(modifier: Modifier = Modifier) {
 
 @Composable
 fun CalculatorButton(symbol: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    // अलग-अलग symbols के लिए रंग तय करना
     val backgroundColor = when (symbol) {
-        "C" -> Color(0xFFE84545) // Red
-        "⌫" -> Color(0xFFFFA500) // Orange
-        "/", "x", "-", "+", "%", "=" -> Color(0xFF1E90FF) // Blue
-        else -> Color(0xFF2E2E2E) // Dark grey
+        "C" -> Color(0xFFE84545)
+        "⌫" -> Color(0xFFFFA500)
+        "/", "x", "-", "+", "%", "=" -> Color(0xFF1E90FF)
+        else -> Color(0xFF2E2E2E)
     }
 
-    // बटन UI
     Box(
         modifier = modifier
             .background(backgroundColor, shape = RoundedCornerShape(16.dp))
@@ -123,28 +128,25 @@ fun CalculatorButton(symbol: String, onClick: () -> Unit, modifier: Modifier = M
     }
 }
 
-// Button click logic
 fun handleButtonClick(currentInput: String, symbol: String): String {
     return when (symbol) {
-        "C" -> "" // Clear input
-        "⌫" -> currentInput.dropLast(1) // Remove last character
-        "=" -> calculateResult(currentInput) // Calculate result
-        else -> currentInput + symbol // Append symbol
+        "C" -> ""
+        "⌫" -> currentInput.dropLast(1)
+        "=" -> calculateResult(currentInput)
+        else -> currentInput + symbol
     }
 }
 
-// Expression calculation function
 fun calculateResult(expression: String): String {
     return try {
         val replaced = expression.replace("x", "*")
-        val result = eval(replaced) // Custom eval method नीचे define है
+        val result = eval(replaced)
         if (result % 1 == 0.0) result.toInt().toString() else result.toString()
     } catch (e: Exception) {
         "Error"
     }
 }
 
-// Simple evaluator (केवल basic math support)
 fun eval(expr: String): Double {
     return object : Any() {
         var pos = -1
